@@ -3,19 +3,21 @@
 [![PyPI version](https://badge.fury.io/py/pacetype.svg)](https://badge.fury.io/py/pacetype)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
-Simulates typing text and emojis character-by-character with adjustable delays. Uses the clipboard for robust cross-platform compatibility, especially for special characters and emojis that often cause issues with direct key simulation.
+Simulates typing text, including emojis and special characters, with adjustable delays for specific characters. Uses `pyautogui.typewrite()` for speed with standard characters and the clipboard for robust cross-platform compatibility with complex characters (like emojis) that often cause issues with direct key simulation.
 
 ## 🤔 Why Pacetype?
 
-Automating keyboard input with libraries like `pyautogui` can be tricky when dealing with emojis or complex Unicode characters. Direct key simulation doesn't always map correctly across different OSs and input methods.
+Automating keyboard input with libraries like `pyautogui` can be fast for standard text but tricky when dealing with emojis or complex Unicode characters. Direct key simulation (`pyautogui.typewrite`) doesn't always handle these complex characters correctly across different OSs and input methods. Conversely, simulating copy-paste for *every* character is reliable but slower.
 
-`pacetype` simplifies this by:
+`pacetype` offers a hybrid approach:
 
-1.  Copying one character (including emojis) at a time to the system clipboard.
-2.  Simulating the standard "paste" keyboard shortcut (Ctrl+V or Cmd+V).
-3.  Waiting for a specified interval (if provided) before the next character.
+1.  It detects standard, printable characters and types them rapidly using `pyautogui.typewrite()`.
+2.  When it encounters a complex character (emoji, symbol, non-printable), it switches to the clipboard method:
+    *   Copies the single complex character to the system clipboard.
+    *   Simulates the standard "paste" keyboard shortcut (Ctrl+V or Cmd+V).
+    *   Waits for a specified `interval` (if provided) *only after pasting* a complex character.
 
-This clipboard-based method ensures greater reliability for a wide range of characters.
+This hybrid method provides the speed of `typewrite` for normal text and the reliability of the clipboard for special characters.
 
 ## 🚀 Installation
 
@@ -35,35 +37,37 @@ import time
 print("Pacetyping in 3 seconds...")
 time.sleep(3)
 
-# Type text with the default delay (~0.1 seconds between characters)
-pacetype("Hello World! 👋")
+# Type text with complex characters. Delay only applies after 👋 and 🐢.
+# Standard characters are typed quickly.
+pacetype("Hello World! 👋 Fast standard text. Slow emoji... 🐢", interval=0.5)
 
-# Type text with a custom delay (0.5 seconds between characters)
-pacetype("Typing slowly... 🐢", interval=0.5)
+# Type text rapidly (no interval delay for clipboard pastes)
+pacetype("Typing emojis quickly! ✅🚀", interval=0.0)
 
-# Pacetype inherently has a small delay due to the copy/paste mechanism,
-# even if interval is 0.0.
-pacetype("Fast typing!", interval=0.0)
+# Type standard text very fast (uses typewrite, interval is ignored)
+pacetype("This uses pyautogui.typewrite and is fast.", interval=0.5) # interval has no effect here
 
 print("Typing finished!")
 ```
 
 ### Key Points:
 
-*   **Default Delay:** By default, pacetype uses a `0.05` second delay between characters (`pacetype("text")` is equivalent to `pacetype("text", interval=0.05)`). This is defined in `pacetype/__init__.py`.
-*   **Inherent Delay:** Even if you set `interval=0.0`, there will always be a small, system-dependent delay between characters due to the time it takes to perform the clipboard copy and paste operations. There is no artificial `time.sleep(0.01)` added when the interval is 0.
+*   **Hybrid Typing:** Standard characters are typed using the fast `pyautogui.typewrite(interval=0)`. Complex characters (emojis, etc.) are pasted via the clipboard.
+*   **Conditional Delay:** The `interval` argument (defaulting to `0.0`) applies *only* as a `time.sleep()` pause *after* a complex character has been pasted using the clipboard. It does not affect the speed of standard character typing.
+*   **Clipboard for Complexity:** The clipboard method ensures greater reliability for emojis and a wide range of special characters that `typewrite` might fail on.
 
 ## ⚙️ Features
 
+*   **Hybrid Typing:** Fast typing for standard text, reliable clipboard pasting for complex characters.
 *   **Emoji & Unicode Support:** Reliably types emojis and complex characters via the clipboard.
-*   **Adjustable Delay:** Control typing speed with the optional `interval` argument.
+*   **Conditional Delay:** Control paste speed for complex characters with the optional `interval` argument.
 *   **Simple Callable API:** Just `import pacetype` and use `pacetype("your text", interval=...)`.
 *   **Cross-Platform:** Works on Windows, macOS, and Linux (thanks to `pyperclip` and `pyautogui`).
 
 ## ⚠️ Important Notes
 
 *   **Window Focus:** The target application window (e.g., text editor, browser, chat) must have keyboard focus when `pacetype()` is executing.
-*   **Clipboard Use:** Pacetype relies heavily on the system clipboard. Any content you manually copy while it's running will be overwritten. The clipboard will contain the last character typed after the script finishes.
+*   **Clipboard Use:** Pacetype uses the system clipboard when pasting complex characters. Any content you manually copy while it's pasting such a character might be overwritten. The clipboard will contain the last complex character pasted after the script finishes. Standard typing does not affect the clipboard.
 *   **Keyboard Shortcuts:** Assumes standard `Ctrl+V` (Windows/Linux) or `Cmd+V` (macOS) paste shortcuts are active.
 
 ## 🤝 Contributing
